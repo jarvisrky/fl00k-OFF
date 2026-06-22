@@ -1,0 +1,27 @@
+# Runtime output
+exports/
+sessions/
+captures/
+*.pcap
+*.pcapng
+*.tmp.csv
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# PowerShell module/cache noise
+*.ps1xml
+*.clixml
+
+# Secrets / local-only overrides
+*.local.json
+.env
