@@ -1,0 +1,12 @@
+{
+  "TsharkPath": "C:\\Program Files\\Wireshark\\tshark.exe",
+  "OutputDir": "",
+  "Adapter": "auto",
+  "WindowsAdapter": "",
+  "Duration": 90,
+  "IpWaitSeconds": 25,
+  "Format": "csv",
+  "IncludeOwnLldp": false,
+  "KeepRaw": false,
+  "NoLiveExcel": false
+}
