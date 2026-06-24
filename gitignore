@@ -1,0 +1,46 @@
+# -----------------------------------------------------------------------
+# flookOFF .gitignore
+# -----------------------------------------------------------------------
+
+# Runtime data - never commit these
+captures/
+sessions/
+exports/
+
+# Keep the folder stubs so the structure is visible in the repo
+!captures/.gitkeep
+!sessions/.gitkeep
+!exports/.gitkeep
+
+# Python (lldp_to_csv_plus.py offline fallback)
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Editor / IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# PowerShell
+*.ps1xml
+
+# macOS (if anyone ever clones on a Mac to edit)
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log

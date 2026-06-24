@@ -1,63 +1,131 @@
 <#
-    Adds flookOFF to your PowerShell profile as a persistent command.
-    Run from the repo root:
-        powershell.exe -ExecutionPolicy Bypass -File .\install.ps1
+.SYNOPSIS
+    flookOFF installer. Run once after cloning the repo.
+
+.DESCRIPTION
+    1. Creates the flookOFF directory at the chosen install path.
+    2. Copies all tool files into place.
+    3. Appends (or replaces) the flookOFF function in your PowerShell profile
+       so you can type "flookOFF" from any shell.
+
+.EXAMPLE
+    .\install.ps1
+    .\install.ps1 -InstallPath "D:\Tools\flookOFF"
+
+.NOTES
+    Requires PowerShell 5.1+ on Windows.
+    Run from the repo root directory.
 #>
-[CmdletBinding()]
 param(
-    [string]$InstallPath = ""
+    [string]$InstallPath = "C:\Users\$env:USERNAME\Documents\flookOFF"
 )
 
 $ErrorActionPreference = "Stop"
-$sourceRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+Set-ExecutionPolicy -Scope Process Bypass -Force
 
-if (-not $InstallPath) {
-    $InstallPath = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "flookOFF"
+$BANNER = @"
+
+  Installing flookOFF...
+  Install path : $InstallPath
+  Profile      : $PROFILE
+
+"@
+Write-Host $BANNER -ForegroundColor Cyan
+
+# ---------------------------------------------------------------------------
+# 1. Create directory structure
+# ---------------------------------------------------------------------------
+$dirs = @(
+    $InstallPath,
+    (Join-Path $InstallPath "lib"),
+    (Join-Path $InstallPath "sessions"),
+    (Join-Path $InstallPath "captures"),
+    (Join-Path $InstallPath "exports"),
+    (Join-Path $InstallPath "screenshots")
+)
+foreach ($d in $dirs) {
+    New-Item -ItemType Directory -Force -Path $d | Out-Null
+    Write-Host "  [dir]  $d" -ForegroundColor DarkGray
 }
 
-$sourceFull = [System.IO.Path]::GetFullPath($sourceRoot)
-$targetFull = [System.IO.Path]::GetFullPath($InstallPath)
+# ---------------------------------------------------------------------------
+# 2. Copy tool files
+# ---------------------------------------------------------------------------
+$src = $PSScriptRoot
 
-if ($sourceFull.TrimEnd('\') -ne $targetFull.TrimEnd('\')) {
-    New-Item -ItemType Directory -Force -Path $targetFull | Out-Null
-    $exclude = @(".git", "captures", "sessions", "exports")
-    Get-ChildItem -Path $sourceFull -Force | Where-Object { $_.Name -notin $exclude } | ForEach-Object {
-        $dest = Join-Path $targetFull $_.Name
-        if ($_.PSIsContainer) {
-            Copy-Item -Path $_.FullName -Destination $dest -Recurse -Force
-        } else {
-            Copy-Item -Path $_.FullName -Destination $dest -Force
-        }
+$filesToCopy = @(
+    @{ Src = "flookOFF.ps1";         Dst = $InstallPath },
+    @{ Src = "lib\network.ps1";      Dst = (Join-Path $InstallPath "lib") },
+    @{ Src = "lib\export.ps1";       Dst = (Join-Path $InstallPath "lib") },
+    @{ Src = "lib\scan_lldp.ps1";    Dst = (Join-Path $InstallPath "lib") }
+)
+
+foreach ($f in $filesToCopy) {
+    $srcPath = Join-Path $src $f.Src
+    if (-not (Test-Path $srcPath)) {
+        Write-Host "  [MISSING]  $($f.Src) - skipped" -ForegroundColor Yellow
+        continue
     }
+    Copy-Item -Path $srcPath -Destination $f.Dst -Force
+    Write-Host "  [copy]  $($f.Src)" -ForegroundColor Green
 }
 
-$profilePath = $PROFILE.CurrentUserAllHosts
-$profileDir = Split-Path -Parent $profilePath
+# ---------------------------------------------------------------------------
+# 3. Wire up the PowerShell profile
+# ---------------------------------------------------------------------------
+$profileDir = Split-Path $PROFILE -Parent
 New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
-if (-not (Test-Path $profilePath)) { New-Item -ItemType File -Force -Path $profilePath | Out-Null }
 
-$start = "# >>> flookOFF >>>"
-$end   = "# <<< flookOFF <<<"
-$block = @"
-$start
-`$env:FLOOKOFF_HOME = "$targetFull"
+$escapedPath = $InstallPath -replace '\\','\\'
+
+$funcBlock = @"
+
+# ---- flookOFF (auto-added by install.ps1) ----
+`$FlookOFFRoot = "$InstallPath"
+
 function flookOFF {
-    & (Join-Path `$env:FLOOKOFF_HOME "flookOFF.ps1") @args
+    [CmdletBinding()]
+    param(
+        [string]`$TsharkPath     = "C:\Program Files\Wireshark\tshark.exe",
+        [string]`$OutputDir      = "",
+        [string]`$Adapter        = "auto",
+        [string]`$WindowsAdapter = "",
+        [int]`$Duration          = 90,
+        [int]`$IpWaitSeconds     = 25,
+        [ValidateSet("csv","xlsx")]
+        [string]`$Format         = "csv",
+        [switch]`$IncludeOwnLldp,
+        [switch]`$KeepRaw,
+        [switch]`$NoLiveExcel,
+        [switch]`$NoMenu
+    )
+    & (Join-Path `$FlookOFFRoot "flookOFF.ps1") @PSBoundParameters
 }
+
 Set-Alias flook-OFF flookOFF
-$end
+# ---- end flookOFF ----
 "@
 
-$current = Get-Content -Path $profilePath -Raw
-$escapedStart = [regex]::Escape($start)
-$escapedEnd = [regex]::Escape($end)
-$pattern = "(?s)$escapedStart.*?$escapedEnd\r?\n?"
-if ($current -match $pattern) {
-    $current = [regex]::Replace($current, $pattern, "")
+# Remove any previous flookOFF block from the profile before re-adding
+$profileContent = ""
+if (Test-Path $PROFILE) {
+    $profileContent = Get-Content $PROFILE -Raw
+    $profileContent = $profileContent -replace '(?s)# ---- flookOFF.*?# ---- end flookOFF ----\r?\n?', ''
 }
-($current.TrimEnd() + "`r`n`r`n" + $block + "`r`n") | Set-Content -Path $profilePath -Encoding UTF8
 
-Write-Host "flookOFF installed." -ForegroundColor Green
-Write-Host "Install path : $targetFull"
-Write-Host "Profile      : $profilePath"
-Write-Host "Open a new PowerShell window and run: flookOFF" -ForegroundColor Cyan
+$profileContent + $funcBlock | Set-Content $PROFILE -Encoding UTF8
+Write-Host "  [profile]  flookOFF function written to $PROFILE" -ForegroundColor Green
+
+# ---------------------------------------------------------------------------
+# 4. Done
+# ---------------------------------------------------------------------------
+Write-Host ""
+Write-Host "  Install complete." -ForegroundColor Cyan
+Write-Host "  Reload your profile then type 'flookOFF' to start:" -ForegroundColor White
+Write-Host ""
+Write-Host "      . `$PROFILE" -ForegroundColor Yellow
+Write-Host "      flookOFF" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  To uninstall, delete $InstallPath and remove the" -ForegroundColor DarkGray
+Write-Host "  '# ---- flookOFF ----' block from your PowerShell profile." -ForegroundColor DarkGray
+Write-Host ""

@@ -1,0 +1,5 @@
+Building,Room,JackPort,Jack,Switch,switchport,VLAN(s),LinkSpeed,Adapter,IPv4,PrefixLength,SubnetID,Gateway,DHCPServer,Protocol,MgmtIP,SourceMAC,EvidenceCount,CandidateCount,ScanTime,VerifiedBy
+Ozanam Hall,201,C45,Room 201 Jack C45,sw-ozanam-1.campus.edu,ge-0/0/0,PVID:911; VLAN:911 (data),1 Gbps,Ethernet,10.11.201.45,22,10.11.200.0/22,10.11.200.1,10.11.200.5,LLDP,10.1.1.10,00:1a:2b:3c:4d:5e,4,4,2025-06-21T09:14:33,david
+Ozanam Hall,640,A41,Room 640 Jack A41,6W,ge-0/0/32,PVID:644; VLAN:644 (voice),1 Gbps,Ethernet,10.11.144.82,22,10.11.144.0/22,10.11.144.1,10.11.144.5,LLDP,10.1.1.12,00:1a:2b:3c:4d:6f,3,3,2025-06-21T09:47:11,Andrew
+Ozanam Hall,312,B02,Room 312 Jack B02,sw-ozanam-2.campus.edu,ge-0/0/14,PVID:911; VLAN:911 (data); MED-policy:16,1 Gbps,Ethernet,10.11.201.88,22,10.11.200.0/22,10.11.200.1,10.11.200.5,LLDP,10.1.1.10,00:1a:2b:3c:4d:7a,5,5,2025-06-21T10:02:55,david
+Ozanam Hall,115,A01,Room 115 Jack A01,,,,,,,,,,,,,,0,0,2025-06-21T10:31:07,david
